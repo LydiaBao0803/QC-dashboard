@@ -1,0 +1,83 @@
+-- Label: run_summary
+-- Generated at: 2026-02-26T19:57:11.119778Z
+
+Limit  (cost=15185.54..15186.04 rows=200 width=141) (actual time=163.773..163.787 rows=200 loops=1)
+  Output: ar.run_id, ar.run_name, ar.started_at, ar.completed_at, ar.status, a.name, i.name, (count(DISTINCT rs.run_sample_id)), (COALESCE(sum(CASE WHEN (qr.result_flag = 'PASS'::text) THEN 1 ELSE 0 END), '0'::bigint)), (COALESCE(sum(CASE WHEN (qr.result_flag = 'WARN'::text) THEN 1 ELSE 0 END), '0'::bigint)), (COALESCE(sum(CASE WHEN (qr.result_flag = 'FAIL'::text) THEN 1 ELSE 0 END), '0'::bigint))
+  Buffers: shared hit=964
+  ->  Sort  (cost=15185.54..15329.34 rows=57520 width=141) (actual time=163.772..163.779 rows=200 loops=1)
+        Output: ar.run_id, ar.run_name, ar.started_at, ar.completed_at, ar.status, a.name, i.name, (count(DISTINCT rs.run_sample_id)), (COALESCE(sum(CASE WHEN (qr.result_flag = 'PASS'::text) THEN 1 ELSE 0 END), '0'::bigint)), (COALESCE(sum(CASE WHEN (qr.result_flag = 'WARN'::text) THEN 1 ELSE 0 END), '0'::bigint)), (COALESCE(sum(CASE WHEN (qr.result_flag = 'FAIL'::text) THEN 1 ELSE 0 END), '0'::bigint))
+        Sort Key: ar.started_at DESC
+        Sort Method: quicksort  Memory: 65kB
+        Buffers: shared hit=964
+        ->  GroupAggregate  (cost=6894.48..12699.57 rows=57520 width=141) (actual time=127.895..163.140 rows=303 loops=1)
+              Output: ar.run_id, ar.run_name, ar.started_at, ar.completed_at, ar.status, a.name, i.name, count(DISTINCT rs.run_sample_id), COALESCE(sum(CASE WHEN (qr.result_flag = 'PASS'::text) THEN 1 ELSE 0 END), '0'::bigint), COALESCE(sum(CASE WHEN (qr.result_flag = 'WARN'::text) THEN 1 ELSE 0 END), '0'::bigint), COALESCE(sum(CASE WHEN (qr.result_flag = 'FAIL'::text) THEN 1 ELSE 0 END), '0'::bigint)
+              Group Key: ar.run_id, a.name, i.name
+              Buffers: shared hit=961
+              ->  Incremental Sort  (cost=6894.48..10686.37 rows=57520 width=122) (actual time=127.569..150.023 rows=57633 loops=1)
+                    Output: ar.run_id, a.name, i.name, ar.run_name, ar.started_at, ar.completed_at, ar.status, rs.run_sample_id, qr.result_flag
+                    Sort Key: ar.run_id, a.name, i.name, rs.run_sample_id
+                    Presorted Key: ar.run_id
+                    Full-sort Groups: 301  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
+                    Pre-sorted Groups: 301  Sort Method: quicksort  Average Memory: 25kB  Peak Memory: 25kB
+                    Buffers: shared hit=961
+                    ->  Merge Left Join  (cost=6884.36..7785.93 rows=57520 width=122) (actual time=127.168..133.107 rows=57633 loops=1)
+                          Output: ar.run_id, a.name, i.name, ar.run_name, ar.started_at, ar.completed_at, ar.status, rs.run_sample_id, qr.result_flag
+                          Merge Cond: (ar.run_id = rs.run_id)
+                          Buffers: shared hit=958
+                          ->  Nested Loop  (cost=0.47..38.48 rows=304 width=109) (actual time=0.222..0.673 rows=303 loops=1)
+                                Output: ar.run_id, ar.run_name, ar.started_at, ar.completed_at, ar.status, a.name, i.name
+                                Inner Unique: true
+                                Buffers: shared hit=9
+                                ->  Nested Loop  (cost=0.31..30.23 rows=304 width=85) (actual time=0.215..0.599 rows=303 loops=1)
+                                      Output: ar.run_id, ar.run_name, ar.started_at, ar.completed_at, ar.status, ar.instrument_id, a.name
+                                      Inner Unique: true
+                                      Buffers: shared hit=7
+                                      ->  Index Scan using assay_run_pkey on public.assay_run ar  (cost=0.15..21.99 rows=304 width=61) (actual time=0.006..0.129 rows=303 loops=1)
+                                            Output: ar.run_id, ar.assay_id, ar.instrument_id, ar.run_name, ar.started_at, ar.completed_at, ar.status, ar.operator
+                                            Filter: ((ar.started_at >= '2026-02-19 19:57:10.896032'::timestamp without time zone) AND (ar.started_at < '2026-02-27 19:57:10.896032'::timestamp without time zone) AND (ar.status = ANY ('{COMPLETED,FAILED}'::text[])))
+                                            Rows Removed by Filter: 1
+                                            Buffers: shared hit=5
+                                      ->  Memoize  (cost=0.16..0.34 rows=1 width=40) (actual time=0.001..0.001 rows=1 loops=303)
+                                            Output: a.name, a.assay_id
+                                            Cache Key: ar.assay_id
+                                            Cache Mode: logical
+                                            Hits: 302  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                            Buffers: shared hit=2
+                                            ->  Index Scan using assay_pkey on public.assay a  (cost=0.15..0.33 rows=1 width=40) (actual time=0.030..0.030 rows=1 loops=1)
+                                                  Output: a.name, a.assay_id
+                                                  Index Cond: (a.assay_id = ar.assay_id)
+                                                  Buffers: shared hit=2
+                                ->  Memoize  (cost=0.16..0.34 rows=1 width=40) (actual time=0.000..0.000 rows=1 loops=303)
+                                      Output: i.name, i.instrument_id
+                                      Cache Key: ar.instrument_id
+                                      Cache Mode: logical
+                                      Hits: 302  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                                      Buffers: shared hit=2
+                                      ->  Index Scan using instrument_pkey on public.instrument i  (cost=0.15..0.33 rows=1 width=40) (actual time=0.005..0.005 rows=1 loops=1)
+                                            Output: i.name, i.instrument_id
+                                            Index Cond: (i.instrument_id = ar.instrument_id)
+                                            Buffers: shared hit=2
+                          ->  Sort  (cost=6883.89..7027.69 rows=57520 width=21) (actual time=126.940..128.223 rows=57632 loops=1)
+                                Output: rs.run_sample_id, rs.run_id, qr.result_flag
+                                Sort Key: rs.run_id
+                                Sort Method: quicksort  Memory: 4067kB
+                                Buffers: shared hit=949
+                                ->  Hash Right Join  (cost=944.36..2336.42 rows=57520 width=21) (actual time=91.755..123.214 rows=57632 loops=1)
+                                      Output: rs.run_sample_id, rs.run_id, qr.result_flag
+                                      Inner Unique: true
+                                      Hash Cond: (qr.run_sample_id = rs.run_sample_id)
+                                      Buffers: shared hit=949
+                                      ->  Seq Scan on public.qc_result qr  (cost=0.00..1238.38 rows=58538 width=13) (actual time=0.006..21.680 rows=58538 loops=1)
+                                            Output: qr.qc_result_id, qr.run_id, qr.run_sample_id, qr.qc_rule_id, qr.metric_name, qr.metric_value, qr.result_flag, qr.created_at
+                                            Buffers: shared hit=653
+                                      ->  Hash  (cost=584.16..584.16 rows=28816 width=16) (actual time=91.718..91.718 rows=28816 loops=1)
+                                            Output: rs.run_sample_id, rs.run_id
+                                            Buckets: 32768  Batches: 1  Memory Usage: 1607kB
+                                            Buffers: shared hit=296
+                                            ->  Seq Scan on public.run_sample rs  (cost=0.00..584.16 rows=28816 width=16) (actual time=0.004..88.404 rows=28816 loops=1)
+                                                  Output: rs.run_sample_id, rs.run_id
+                                                  Buffers: shared hit=296
+Planning:
+  Buffers: shared hit=513
+Planning Time: 20.873 ms
+Execution Time: 166.528 ms

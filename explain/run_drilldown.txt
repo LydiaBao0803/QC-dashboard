@@ -1,0 +1,35 @@
+-- Label: run_drilldown
+-- Generated at: 2026-02-26T19:57:11.124804Z
+
+Sort  (cost=795.53..796.01 rows=195 width=71) (actual time=1.720..1.725 rows=192 loops=1)
+  Output: rs.run_sample_id, s.external_id, s.patient_id, rs.well_position, rs.replicate_number, rs.expected_ct, rs.status, qr.metric_name, qr.metric_value, qr.result_flag
+  Sort Key: rs.well_position, rs.replicate_number, qr.metric_name
+  Sort Method: quicksort  Memory: 44kB
+  Buffers: shared hit=359
+  ->  Nested Loop Left Join  (cost=41.69..788.11 rows=195 width=71) (actual time=0.064..0.815 rows=192 loops=1)
+        Output: rs.run_sample_id, s.external_id, s.patient_id, rs.well_position, rs.replicate_number, rs.expected_ct, rs.status, qr.metric_name, qr.metric_value, qr.result_flag
+        Buffers: shared hit=356
+        ->  Merge Join  (cost=41.40..60.26 rows=96 width=52) (actual time=0.061..0.298 rows=96 loops=1)
+              Output: rs.run_sample_id, rs.well_position, rs.replicate_number, rs.expected_ct, rs.status, s.external_id, s.patient_id
+              Merge Cond: (s.sample_id = rs.sample_id)
+              Buffers: shared hit=68
+              ->  Index Scan using sample_pkey on public.sample s  (cost=0.28..205.43 rows=5010 width=28) (actual time=0.002..0.218 rows=123 loops=1)
+                    Output: s.sample_id, s.external_id, s.patient_id, s.collection_ts, s.matrix_type, s.notes
+                    Buffers: shared hit=4
+              ->  Sort  (cost=41.12..41.36 rows=96 width=40) (actual time=0.055..0.057 rows=96 loops=1)
+                    Output: rs.run_sample_id, rs.well_position, rs.replicate_number, rs.expected_ct, rs.status, rs.sample_id
+                    Sort Key: rs.sample_id
+                    Sort Method: quicksort  Memory: 31kB
+                    Buffers: shared hit=64
+                    ->  Index Scan using idx_run_sample_run on public.run_sample rs  (cost=0.29..37.96 rows=96 width=40) (actual time=0.009..0.043 rows=96 loops=1)
+                          Output: rs.run_sample_id, rs.well_position, rs.replicate_number, rs.expected_ct, rs.status, rs.sample_id
+                          Index Cond: (rs.run_id = '25'::smallint)
+                          Buffers: shared hit=64
+        ->  Index Scan using idx_qc_result_run_sample on public.qc_result qr  (cost=0.29..7.56 rows=2 width=27) (actual time=0.005..0.005 rows=2 loops=96)
+              Output: qr.qc_result_id, qr.run_id, qr.run_sample_id, qr.qc_rule_id, qr.metric_name, qr.metric_value, qr.result_flag, qr.created_at
+              Index Cond: (qr.run_sample_id = rs.run_sample_id)
+              Buffers: shared hit=288
+Planning:
+  Buffers: shared hit=111
+Planning Time: 0.704 ms
+Execution Time: 1.741 ms

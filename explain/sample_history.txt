@@ -1,0 +1,66 @@
+-- Label: sample_history
+-- Generated at: 2026-02-26T19:57:11.126752Z
+
+Sort  (cost=24.03..24.06 rows=12 width=144) (actual time=0.028..0.029 rows=2 loops=1)
+  Output: s.external_id, ar.run_id, ar.run_name, ar.started_at, ar.status, a.name, i.name, rs.well_position, rs.replicate_number, rs.expected_ct, qr.metric_name, qr.metric_value, qr.result_flag
+  Sort Key: ar.started_at DESC, ar.run_id, qr.metric_name
+  Sort Method: quicksort  Memory: 25kB
+  Buffers: shared hit=15
+  ->  Nested Loop Left Join  (cost=1.33..23.82 rows=12 width=144) (actual time=0.022..0.024 rows=2 loops=1)
+        Output: s.external_id, ar.run_id, ar.run_name, ar.started_at, ar.status, a.name, i.name, rs.well_position, rs.replicate_number, rs.expected_ct, qr.metric_name, qr.metric_value, qr.result_flag
+        Buffers: shared hit=15
+        ->  Nested Loop  (cost=1.04..21.05 rows=6 width=133) (actual time=0.020..0.021 rows=1 loops=1)
+              Output: s.external_id, rs.well_position, rs.replicate_number, rs.expected_ct, rs.run_sample_id, ar.run_id, ar.run_name, ar.started_at, ar.status, a.name, i.name
+              Inner Unique: true
+              Buffers: shared hit=12
+              ->  Nested Loop  (cost=0.88..20.30 rows=6 width=109) (actual time=0.018..0.018 rows=1 loops=1)
+                    Output: s.external_id, rs.well_position, rs.replicate_number, rs.expected_ct, rs.run_sample_id, ar.run_id, ar.run_name, ar.started_at, ar.status, ar.instrument_id, a.name
+                    Inner Unique: true
+                    Buffers: shared hit=10
+                    ->  Nested Loop  (cost=0.72..19.56 rows=6 width=85) (actual time=0.015..0.015 rows=1 loops=1)
+                          Output: s.external_id, rs.well_position, rs.replicate_number, rs.expected_ct, rs.run_sample_id, ar.run_id, ar.run_name, ar.started_at, ar.status, ar.assay_id, ar.instrument_id
+                          Inner Unique: true
+                          Buffers: shared hit=8
+                          ->  Nested Loop  (cost=0.57..18.57 rows=6 width=40) (actual time=0.013..0.014 rows=1 loops=1)
+                                Output: s.external_id, rs.well_position, rs.replicate_number, rs.expected_ct, rs.run_id, rs.run_sample_id
+                                Buffers: shared hit=6
+                                ->  Index Scan using idx_sample_external_id on public.sample s  (cost=0.28..8.30 rows=1 width=18) (actual time=0.011..0.011 rows=1 loops=1)
+                                      Output: s.sample_id, s.external_id, s.patient_id, s.collection_ts, s.matrix_type, s.notes
+                                      Index Cond: (s.external_id = 'SMP-010391'::text)
+                                      Buffers: shared hit=3
+                                ->  Index Scan using idx_run_sample_sample on public.run_sample rs  (cost=0.29..9.55 rows=72 width=38) (actual time=0.001..0.001 rows=1 loops=1)
+                                      Output: rs.run_sample_id, rs.run_id, rs.sample_id, rs.well_position, rs.replicate_number, rs.expected_ct, rs.status
+                                      Index Cond: (rs.sample_id = s.sample_id)
+                                      Buffers: shared hit=3
+                          ->  Index Scan using assay_run_pkey on public.assay_run ar  (cost=0.15..0.17 rows=1 width=53) (actual time=0.001..0.001 rows=1 loops=1)
+                                Output: ar.run_id, ar.assay_id, ar.instrument_id, ar.run_name, ar.started_at, ar.completed_at, ar.status, ar.operator
+                                Index Cond: (ar.run_id = rs.run_id)
+                                Buffers: shared hit=2
+                    ->  Memoize  (cost=0.16..0.34 rows=1 width=40) (actual time=0.003..0.003 rows=1 loops=1)
+                          Output: a.name, a.assay_id
+                          Cache Key: ar.assay_id
+                          Cache Mode: logical
+                          Hits: 0  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                          Buffers: shared hit=2
+                          ->  Index Scan using assay_pkey on public.assay a  (cost=0.15..0.33 rows=1 width=40) (actual time=0.002..0.002 rows=1 loops=1)
+                                Output: a.name, a.assay_id
+                                Index Cond: (a.assay_id = ar.assay_id)
+                                Buffers: shared hit=2
+              ->  Memoize  (cost=0.16..0.34 rows=1 width=40) (actual time=0.002..0.002 rows=1 loops=1)
+                    Output: i.name, i.instrument_id
+                    Cache Key: ar.instrument_id
+                    Cache Mode: logical
+                    Hits: 0  Misses: 1  Evictions: 0  Overflows: 0  Memory Usage: 1kB
+                    Buffers: shared hit=2
+                    ->  Index Scan using instrument_pkey on public.instrument i  (cost=0.15..0.33 rows=1 width=40) (actual time=0.001..0.001 rows=1 loops=1)
+                          Output: i.name, i.instrument_id
+                          Index Cond: (i.instrument_id = ar.instrument_id)
+                          Buffers: shared hit=2
+        ->  Index Scan using idx_qc_result_run_sample on public.qc_result qr  (cost=0.29..0.44 rows=2 width=27) (actual time=0.002..0.002 rows=2 loops=1)
+              Output: qr.qc_result_id, qr.run_id, qr.run_sample_id, qr.qc_rule_id, qr.metric_name, qr.metric_value, qr.result_flag, qr.created_at
+              Index Cond: (qr.run_sample_id = rs.run_sample_id)
+              Buffers: shared hit=3
+Planning:
+  Buffers: shared hit=33
+Planning Time: 0.399 ms
+Execution Time: 0.050 ms
