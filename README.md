@@ -251,18 +251,6 @@ Suggested talking points:
 - Note that the queries avoid `SELECT *`, use parameter binding, and match index column order.
 
 
-## 8. How to present this in an interview
-
-1. **Walk the schema**:
-   - Start from `assay` → `assay_run` → `run_sample` → `qc_result`.
-   - Call out FKs, UNIQUE constraints, and CHECK constraints and why they matter operationally.
-2. **Tie queries to indexes**:
-   - Show the Run Overview and QC Investigation pages.
-   - For each primary query, map WHERE/JOIN/GROUP BY to specific indexes.
-3. **Show performance evidence**:
-   - Open one of the `explain/*.txt` files.
-   - Briefly interpret the plan: index scans vs. seq scans, row counts, and buffer usage.
-4. **Emphasize simplicity**:
    - PostgreSQL + psycopg + Streamlit only.
    - No authentication, no complex front-end framework—just enough to clearly demonstrate data modeling, query design, and performance thinking.
 
