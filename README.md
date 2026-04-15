@@ -1,7 +1,7 @@
 # Assay Run & Sample Tracking + QC Dashboard (qPCR demo)
 
 Minimal but realistic qPCR assay run and sample tracking demo built for PostgreSQL + Python + Streamlit.  
-Focus areas for the interview:
+Focus areas:
 
 - **Schema design**: clear FKs, UNIQUE and CHECK constraints.
 - **Indexing strategy**: tuned to specific QC investigation query patterns.
