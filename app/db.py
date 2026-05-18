@@ -10,8 +10,19 @@ from .config import DbConfig, load_db_config
 
 
 def is_demo_mode() -> bool:
-    """Return True when DEMO_MODE env-var (or Streamlit secret) is set."""
-    return os.environ.get("DEMO_MODE", "").strip().lower() in ("1", "true", "yes")
+    """Return True when DEMO_MODE is set via env-var OR Streamlit secrets.
+
+    Streamlit Cloud stores secrets in st.secrets (TOML), NOT in os.environ,
+    so we must check both.
+    """
+    _truthy = ("1", "true", "yes")
+    if os.environ.get("DEMO_MODE", "").strip().lower() in _truthy:
+        return True
+    try:
+        import streamlit as st
+        return str(st.secrets.get("DEMO_MODE", "")).strip().lower() in _truthy
+    except Exception:
+        return False
 
 
 @st.cache_resource
