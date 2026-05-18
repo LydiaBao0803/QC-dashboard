@@ -9,6 +9,11 @@ from app.queries import get_run_qc_details, get_sample_qc_history
 
 
 def _load_run_metadata(run_id: int) -> pd.DataFrame:
+    from app.db import is_demo_mode
+    if is_demo_mode():
+        from app.demo_data import get_run_metadata_demo
+        return get_run_metadata_demo(run_id)
+
     sql = """
         SELECT
             ar.run_id,

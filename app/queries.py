@@ -3,7 +3,7 @@ from typing import Iterable, Optional, Sequence
 
 import pandas as pd
 
-from .db import fetch_df
+from .db import fetch_df, is_demo_mode
 
 
 def get_run_qc_summary(
@@ -14,6 +14,10 @@ def get_run_qc_summary(
     limit: int = 200,
 ) -> pd.DataFrame:
     """Aggregate QC flags per run over a date range, optionally filtered by assay and status."""
+    if is_demo_mode():
+        from .demo_data import get_run_qc_summary_demo
+        return get_run_qc_summary_demo(start_date, end_date, assay_id, statuses, limit)
+
     sql = """
         SELECT
             ar.run_id,
@@ -82,6 +86,10 @@ def get_run_qc_summary(
 
 def get_run_qc_details(run_id: int) -> pd.DataFrame:
     """Return per-sample QC metrics for a specific run."""
+    if is_demo_mode():
+        from .demo_data import get_run_qc_details_demo
+        return get_run_qc_details_demo(run_id)
+
     sql = """
         SELECT
             rs.run_sample_id,
@@ -106,6 +114,10 @@ def get_run_qc_details(run_id: int) -> pd.DataFrame:
 
 def get_sample_qc_history(external_id: str) -> pd.DataFrame:
     """Return QC history for a given sample across all runs/assays."""
+    if is_demo_mode():
+        from .demo_data import get_sample_qc_history_demo
+        return get_sample_qc_history_demo(external_id)
+
     sql = """
         SELECT
             s.external_id,

@@ -10,7 +10,12 @@ from app.queries import get_run_qc_summary
 
 
 def _assay_selector() -> Optional[int]:
-    assays = fetch_df("SELECT assay_id, name FROM assay ORDER BY name")
+    from app.db import is_demo_mode
+    if is_demo_mode():
+        from app.demo_data import get_assays_demo
+        assays = get_assays_demo()
+    else:
+        assays = fetch_df("SELECT assay_id, name FROM assay ORDER BY name")
     if assays.empty:
         st.sidebar.warning("No assays found in database.")
         return None

@@ -1,3 +1,4 @@
+import os
 from typing import Any, Mapping, Optional, Sequence
 
 import pandas as pd
@@ -6,6 +7,11 @@ from psycopg.rows import dict_row
 import streamlit as st
 
 from .config import DbConfig, load_db_config
+
+
+def is_demo_mode() -> bool:
+    """Return True when DEMO_MODE env-var (or Streamlit secret) is set."""
+    return os.environ.get("DEMO_MODE", "").strip().lower() in ("1", "true", "yes")
 
 
 @st.cache_resource

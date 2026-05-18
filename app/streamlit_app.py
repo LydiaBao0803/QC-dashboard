@@ -15,6 +15,15 @@ def main() -> None:
 
     st.sidebar.title("Assay Run & QC Dashboard")
 
+    # Show a notice when running without a real database
+    from app.db import is_demo_mode
+    if is_demo_mode():
+        st.info(
+            "🔬 **Demo mode** — displaying synthetic qPCR data. "
+            "Connect a PostgreSQL database and unset `DEMO_MODE` to use live data.",
+            icon=None,
+        )
+
     page: Literal["Run overview", "QC investigation"] = st.sidebar.radio(
         "View",
         options=["Run overview", "QC investigation"],
