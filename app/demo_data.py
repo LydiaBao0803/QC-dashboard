@@ -14,19 +14,33 @@ import pandas as pd
 
 
 def is_demo_mode() -> bool:
-    """Return True when DEMO_MODE is set via env-var OR Streamlit secrets.
+    """Return True when demo mode should be used.
 
-    Streamlit Cloud stores secrets in st.secrets (TOML), NOT in os.environ,
-    so we must check both.
+    Mirrors the logic in app.db.is_demo_mode — see that function for details.
     """
     _truthy = ("1", "true", "yes")
+
     if os.environ.get("DEMO_MODE", "").strip().lower() in _truthy:
         return True
     try:
         import streamlit as st
-        return str(st.secrets.get("DEMO_MODE", "")).strip().lower() in _truthy
+        if str(st.secrets.get("DEMO_MODE", "")).strip().lower() in _truthy:
+            return True
     except Exception:
-        return False
+        pass
+
+    has_db_host_env = bool(os.environ.get("DB_HOST"))
+    has_db_host_secret = False
+    try:
+        import streamlit as st
+        has_db_host_secret = bool(st.secrets.get("DB_HOST"))
+    except Exception:
+        pass
+
+    if not has_db_host_env and not has_db_host_secret:
+        return True
+
+    return False
 
 
 # ── static reference data ─────────────────────────────────────────────────────

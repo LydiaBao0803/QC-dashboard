@@ -10,19 +10,44 @@ from .config import DbConfig, load_db_config
 
 
 def is_demo_mode() -> bool:
-    """Return True when DEMO_MODE is set via env-var OR Streamlit secrets.
+    """Return True when demo mode should be used.
+
+    Three ways demo mode activates (in order):
+    1. DEMO_MODE env-var is set to a truthy value ("1", "true", "yes").
+    2. DEMO_MODE Streamlit secret is set to a truthy value.
+    3. Auto-detect: no DB_HOST is configured in either env-var or Streamlit
+       secrets — meaning there is no real database to connect to.
 
     Streamlit Cloud stores secrets in st.secrets (TOML), NOT in os.environ,
-    so we must check both.
+    so we check both places for every key.
     """
     _truthy = ("1", "true", "yes")
+
+    # 1. Explicit DEMO_MODE env-var
     if os.environ.get("DEMO_MODE", "").strip().lower() in _truthy:
         return True
+
+    # 2. Explicit DEMO_MODE Streamlit secret
     try:
         import streamlit as st
-        return str(st.secrets.get("DEMO_MODE", "")).strip().lower() in _truthy
+        if str(st.secrets.get("DEMO_MODE", "")).strip().lower() in _truthy:
+            return True
     except Exception:
-        return False
+        pass
+
+    # 3. Auto-detect: if no DB_HOST is present anywhere, fall back to demo mode.
+    has_db_host_env = bool(os.environ.get("DB_HOST"))
+    has_db_host_secret = False
+    try:
+        import streamlit as st
+        has_db_host_secret = bool(st.secrets.get("DB_HOST"))
+    except Exception:
+        pass
+
+    if not has_db_host_env and not has_db_host_secret:
+        return True
+
+    return False
 
 
 @st.cache_resource
