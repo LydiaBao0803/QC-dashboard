@@ -1,5 +1,11 @@
 # Assay Run & Sample Tracking + QC Dashboard (qPCR demo)
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://qc-dashboard-7gfurisiddq46wptw3cwoq.streamlit.app/)
+
+> **🔬 Live demo (no login required):**  
+> **[https://qc-dashboard-7gfurisiddq46wptw3cwoq.streamlit.app](https://qc-dashboard-7gfurisiddq46wptw3cwoq.streamlit.app/)**  
+> Runs in demo mode with 40 synthetic qPCR runs — no database needed.
+
 Minimal but realistic qPCR assay run and sample tracking demo built for PostgreSQL + Python + Streamlit.  
 Focus areas:
 
