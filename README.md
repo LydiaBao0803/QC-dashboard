@@ -1,6 +1,6 @@
 # Assay Run & Sample Tracking + QC Dashboard (qPCR demo)
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://qc-dashboard-7gfurisiddq46wptw3cwoq.streamlit.app/)
+[![Streamlit App](https://img.shields.io/badge/Streamlit-Live%20App-FF4B4B?logo=streamlit&logoColor=white)](https://qc-dashboard-7gfurisiddq46wptw3cwoq.streamlit.app/)
 
 > **🔬 Live demo (no login required):**  
 > **[https://qc-dashboard-7gfurisiddq46wptw3cwoq.streamlit.app](https://qc-dashboard-7gfurisiddq46wptw3cwoq.streamlit.app/)**  
