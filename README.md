@@ -2,10 +2,6 @@
 
 [![Streamlit App](https://img.shields.io/badge/Streamlit-Live%20App-FF4B4B?logo=streamlit&logoColor=white)](https://qc-dashboard-7gfurisiddq46wptw3cwoq.streamlit.app/)
 
-> **🔬 Live demo (no login required):**  
-> **[https://qc-dashboard-7gfurisiddq46wptw3cwoq.streamlit.app](https://qc-dashboard-7gfurisiddq46wptw3cwoq.streamlit.app/)**  
-> Runs in demo mode with 40 synthetic qPCR runs — no database needed.
-
 Minimal but realistic qPCR assay run and sample tracking demo built for PostgreSQL + Python + Streamlit.  
 Focus areas:
 
