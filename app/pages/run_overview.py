@@ -48,7 +48,7 @@ def _quick_insights(summary_df: pd.DataFrame) -> list[str]:
     bad_runs = df[df["fail_rate"] > 0.20]
     if not bad_runs.empty:
         names = ", ".join(bad_runs["run_name"].tolist()[:3])
-        insights.append(f"⚠️ {len(bad_runs)} 条 run 失败率超过 20%：{names}")
+        insights.append(f"{len(bad_runs)} run(s) with fail rate above 20%: {names}")
 
     # 2. Worst instrument in this filter window
     if "instrument_name" in df.columns:
@@ -58,8 +58,8 @@ def _quick_insights(summary_df: pd.DataFrame) -> list[str]:
             best = inst_fail.idxmin()
             if inst_fail[worst] > 0.08:
                 insights.append(
-                    f"🔧 {worst} 平均失败率 {inst_fail[worst]*100:.1f}%，"
-                    f"高于 {best}（{inst_fail[best]*100:.1f}%）"
+                    f"{worst} average fail rate {inst_fail[worst]*100:.1f}%, "
+                    f"higher than {best} ({inst_fail[best]*100:.1f}%)"
                 )
 
     # 3. Recent trend (last 5 vs previous 5)
@@ -68,9 +68,15 @@ def _quick_insights(summary_df: pd.DataFrame) -> list[str]:
         last5 = df.iloc[-5:]["fail_rate"].mean()
         if pd.notna(prev5) and pd.notna(last5):
             if last5 > prev5 * 1.25:
-                insights.append(f"📈 近5次 run 失败率（{last5*100:.1f}%）高于前5次（{prev5*100:.1f}%），质量有下滑迹象")
+                insights.append(
+                    f"Recent 5 runs fail rate ({last5*100:.1f}%) higher than prior 5 "
+                    f"({prev5*100:.1f}%) — quality may be declining"
+                )
             elif last5 < prev5 * 0.75:
-                insights.append(f"✅ 近5次 run 失败率（{last5*100:.1f}%）低于前5次（{prev5*100:.1f}%），质量在改善")
+                insights.append(
+                    f"Recent 5 runs fail rate ({last5*100:.1f}%) lower than prior 5 "
+                    f"({prev5*100:.1f}%) — quality is improving"
+                )
 
     return insights[:3]
 
@@ -107,7 +113,7 @@ def _stacked_bar_chart(summary_df: pd.DataFrame) -> go.Figure:
             tickangle=-45,
             tickfont=dict(size=10),
         ),
-        yaxis=dict(showgrid=True, gridcolor="#e0e0e0", title="QC 检查次数"),
+        yaxis=dict(showgrid=True, gridcolor="#e0e0e0", title="QC Check Count"),
     )
     return fig
 
@@ -116,14 +122,14 @@ def _stacked_bar_chart(summary_df: pd.DataFrame) -> go.Figure:
 
 
 def render() -> None:
-    st.header("Run 概览")
+    st.header("Run Overview")
 
     today = date.today()
     default_start = today - timedelta(days=90)
     date_val = st.sidebar.date_input(
-        "Run 日期范围",
+        "Date range",
         (default_start, today),
-        help="按 run 开始时间筛选（含）",
+        help="Filter by run start time (inclusive)",
     )
     if isinstance(date_val, (list, tuple)) and len(date_val) == 2:
         start_date, end_date = date_val
@@ -132,7 +138,7 @@ def render() -> None:
 
     status_choices = ["SCHEDULED", "RUNNING", "COMPLETED", "FAILED"]
     selected_statuses: Iterable[str] = st.sidebar.multiselect(
-        "Run 状态",
+        "Run status",
         options=status_choices,
         default=["COMPLETED", "FAILED"],
     )
@@ -148,7 +154,7 @@ def render() -> None:
     )
 
     if summary_df.empty:
-        st.info("所选筛选条件下无 run 数据。")
+        st.info("No run data for the selected filters.")
         return
 
     summary_df["fail_rate"] = pd.to_numeric(summary_df["fail_rate"], errors="coerce")
@@ -165,10 +171,10 @@ def render() -> None:
     )
 
     k1, k2, k3, k4 = st.columns(4)
-    k1.metric("📋 Run 总数", total)
-    k2.metric("📊 平均失败率", f"{avg_fail:.1f}%")
-    k3.metric("❌ 失败 Runs", failed_runs)
-    k4.metric("🏆 最佳 Assay", best_assay)
+    k1.metric("Total Runs", total)
+    k2.metric("Avg Fail Rate", f"{avg_fail:.1f}%")
+    k3.metric("Failed Runs", failed_runs)
+    k4.metric("Best Assay", best_assay)
 
     # ── quick insights ─────────────────────────────────────────────────────────
     insights = _quick_insights(summary_df)
@@ -179,12 +185,12 @@ def render() -> None:
     st.divider()
 
     # ── stacked bar chart ──────────────────────────────────────────────────────
-    st.subheader("各 Run QC 结果分布（Pass / Warn / Fail）")
+    st.subheader("QC Result Distribution per Run (Pass / Warn / Fail)")
     st.plotly_chart(_stacked_bar_chart(summary_df), use_container_width=True)
 
     # ── fail rate trend sparkline ──────────────────────────────────────────────
     if not summary_df["fail_rate_pct"].isna().all():
-        st.subheader("失败率趋势")
+        st.subheader("Fail Rate Trend")
         chart_df = (
             summary_df.sort_values("started_at")
             .set_index("run_name")[["fail_rate_pct"]]
@@ -194,7 +200,7 @@ def render() -> None:
     st.divider()
 
     # ── data table ────────────────────────────────────────────────────────────
-    st.subheader("Run QC 汇总表")
+    st.subheader("Run QC Summary Table")
     display_cols = [c for c in [
         "run_name", "started_at", "status", "assay_name",
         "instrument_name", "operator", "sample_count",
@@ -203,10 +209,10 @@ def render() -> None:
     st.dataframe(summary_df[display_cols], use_container_width=True, hide_index=True)
 
     # ── drill-down link ───────────────────────────────────────────────────────
-    st.subheader("深入调查某次 Run")
+    st.subheader("Drill Down into a Run")
     run_ids = summary_df.sort_values("started_at", ascending=False)["run_id"].tolist()
     selected_run_id = st.selectbox(
-        "选择 Run",
+        "Select run",
         options=run_ids,
         format_func=lambda rid: (
             summary_df[summary_df["run_id"] == rid]["run_name"].values[0]
@@ -214,13 +220,14 @@ def render() -> None:
         ),
     )
 
-    if st.button("在 QC 调查页面打开"):
+    if st.button("Open in QC Investigation"):
         st.session_state["selected_run_id"] = int(selected_run_id)
         st.session_state["qc_mode"] = "By run"
+        st.session_state["sidebar_page"] = "QC investigation"
         st.rerun()
 
-    with st.expander("高级：SQL 查询参考"):
-        st.markdown("**Run-level QC summary SQL（简化版）**")
+    with st.expander("Advanced: SQL query reference"):
+        st.markdown("**Run-level QC summary SQL (simplified)**")
         st.code(
             """
 SELECT

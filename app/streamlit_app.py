@@ -19,21 +19,21 @@ def main() -> None:
     from app.db import is_demo_mode
     if is_demo_mode():
         st.info(
-            "🔬 **Demo 模式** — 正在展示合成 qPCR 数据（40 runs / 90 天），"
-            "内含仪器降级、Ct 漂移和 NTC 污染三个可分析场景。"
-            "接入 PostgreSQL 数据库并删除 `DEMO_MODE` 环境变量可切换至真实数据。",
+            "**Demo Mode** — Displaying synthetic qPCR data (40 runs / 90 days) "
+            "with three embedded analytical stories: instrument degradation, Ct drift, "
+            "and NTC contamination. Connect a PostgreSQL database to switch to live data.",
             icon=None,
         )
 
     page: Literal["Run overview", "QC investigation", "Trend analysis"] = st.sidebar.radio(
-        "页面",
+        "Navigation",
         options=["Run overview", "QC investigation", "Trend analysis"],
         format_func=lambda x: {
-            "Run overview": "📋 Run 概览",
-            "QC investigation": "🔍 QC 调查",
-            "Trend analysis": "📈 趋势分析",
+            "Run overview": "Run Overview",
+            "QC investigation": "QC Investigation",
+            "Trend analysis": "Trend Analysis",
         }[x],
-        index=0,
+        key="sidebar_page",
     )
 
     if page == "Run overview":

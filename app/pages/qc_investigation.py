@@ -67,8 +67,8 @@ def _metric_summary_chart(qc_df: pd.DataFrame) -> go.Figure:
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        xaxis_title="QC 指标",
-        yaxis=dict(showgrid=True, gridcolor="#e0e0e0", title="次数"),
+        xaxis_title="QC Metric",
+        yaxis=dict(showgrid=True, gridcolor="#e0e0e0", title="Count"),
     )
     return fig
 
@@ -76,7 +76,6 @@ def _metric_summary_chart(qc_df: pd.DataFrame) -> go.Figure:
 def _well_heatmap(qc_df: pd.DataFrame) -> go.Figure:
     """96-well style heatmap: each well coloured by worst flag across metrics."""
     FLAG_ORDER = {"FAIL": 2, "WARN": 1, "PASS": 0}
-    FLAG_COLOR = {0: "#2ecc71", 1: "#f39c12", 2: "#e74c3c", -1: "#cccccc"}
 
     # Aggregate per well: worst flag wins
     well_df = (
@@ -94,7 +93,7 @@ def _well_heatmap(qc_df: pd.DataFrame) -> go.Figure:
     rows = sorted(well_df["row"].unique())
     cols = sorted(well_df["col"].unique())
 
-    # Build z-matrix and text-matrix
+    # Build z-matrix and hover-text matrix
     row_idx = {r: i for i, r in enumerate(rows)}
     col_idx = {c: i for i, c in enumerate(cols)}
     import numpy as np
@@ -110,13 +109,13 @@ def _well_heatmap(qc_df: pd.DataFrame) -> go.Figure:
 
     # Custom discrete colorscale
     colorscale = [
-        [0.0, "#cccccc"],   # -1 → grey
+        [0.0, "#cccccc"],
         [0.25, "#cccccc"],
-        [0.25, "#2ecc71"],  # 0 → green
+        [0.25, "#2ecc71"],
         [0.5, "#2ecc71"],
-        [0.5, "#f39c12"],   # 1 → orange
+        [0.5, "#f39c12"],
         [0.75, "#f39c12"],
-        [0.75, "#e74c3c"],  # 2 → red
+        [0.75, "#e74c3c"],
         [1.0, "#e74c3c"],
     ]
 
@@ -138,12 +137,11 @@ def _well_heatmap(qc_df: pd.DataFrame) -> go.Figure:
         margin=dict(l=30, r=10, t=10, b=40),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(title="列", side="bottom", tickfont=dict(size=10)),
-        yaxis=dict(title="行", autorange="reversed", tickfont=dict(size=10)),
+        xaxis=dict(title="Column", side="bottom", tickfont=dict(size=10)),
+        yaxis=dict(title="Row", autorange="reversed", tickfont=dict(size=10)),
     )
-    # Legend annotation
     fig.add_annotation(
-        text="🟢 PASS  🟠 WARN  🔴 FAIL  ⬜ N/A",
+        text="PASS (green)  WARN (orange)  FAIL (red)  N/A (grey)",
         xref="paper", yref="paper",
         x=0, y=-0.18, showarrow=False,
         font=dict(size=11),
@@ -155,28 +153,28 @@ def _well_heatmap(qc_df: pd.DataFrame) -> go.Figure:
 
 
 def _render_by_run() -> None:
-    st.subheader("按 Run 调查")
+    st.subheader("Investigation by Run")
 
     default_run_id = st.session_state.get("selected_run_id", 1)
     run_id = st.number_input("Run ID", min_value=1, step=1, value=int(default_run_id))
 
-    if st.button("加载 Run"):
+    if st.button("Load run"):
         st.session_state["selected_run_id"] = int(run_id)
 
     run_id = int(st.session_state.get("selected_run_id", run_id))
 
     meta_df = _load_run_metadata(run_id)
     if meta_df.empty:
-        st.info(f"未找到 run_id = {run_id} 的数据。")
+        st.info(f"No data found for run_id = {run_id}.")
         return
 
     # ── metadata ──────────────────────────────────────────────────────────────
-    st.markdown("**Run 基本信息**")
+    st.markdown("**Run metadata**")
     st.table(meta_df)
 
     qc_df = get_run_qc_details(run_id)
     if qc_df.empty:
-        st.info("该 run 暂无 QC 结果。")
+        st.info("No QC results for this run.")
         return
 
     # ── KPI strip ─────────────────────────────────────────────────────────────
@@ -187,29 +185,29 @@ def _render_by_run() -> None:
     fail_pct = fail_n / total_checks * 100 if total_checks else 0
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("✅ PASS", pass_n)
-    c2.metric("🟡 WARN", warn_n)
-    c3.metric("❌ FAIL", fail_n)
-    c4.metric("📊 失败率", f"{fail_pct:.1f}%")
+    c1.metric("PASS", pass_n)
+    c2.metric("WARN", warn_n)
+    c3.metric("FAIL", fail_n)
+    c4.metric("Fail Rate", f"{fail_pct:.1f}%")
 
     st.divider()
 
     # ── well heatmap ──────────────────────────────────────────────────────────
-    st.subheader("孔板 QC 热力图")
-    st.caption("每个孔位显示该孔最差的 QC 结果（FAIL > WARN > PASS）")
+    st.subheader("Well Plate QC Heatmap")
+    st.caption("Each well shows the worst QC result across all metrics (FAIL > WARN > PASS).")
     if "well_position" in qc_df.columns:
         st.plotly_chart(_well_heatmap(qc_df), use_container_width=True)
 
     # ── metric distribution chart ─────────────────────────────────────────────
-    st.subheader("各指标 Pass / Warn / Fail 分布")
+    st.subheader("Pass / Warn / Fail Distribution by Metric")
     st.plotly_chart(_metric_summary_chart(qc_df), use_container_width=True)
 
     # ── raw data table ────────────────────────────────────────────────────────
-    with st.expander("查看原始 QC 明细数据"):
+    with st.expander("View raw QC detail data"):
         st.dataframe(qc_df, use_container_width=True, hide_index=True)
 
-    with st.expander("高级：SQL 查询参考"):
-        st.markdown("**Run drill-down SQL（简化版）**")
+    with st.expander("Advanced: SQL query reference"):
+        st.markdown("**Run drill-down SQL (simplified)**")
         st.code(
             """
 SELECT
@@ -256,13 +254,13 @@ def _ct_history_chart(history_df: pd.DataFrame) -> Optional[go.Figure]:
         markers=True,
         symbol="result_flag",
         symbol_map={"PASS": "circle", "WARN": "diamond", "FAIL": "x"},
-        labels={"started_at": "Run 日期", "metric_value": "Ct 值", "assay_name": "Assay"},
+        labels={"started_at": "Run Date", "metric_value": "Ct Value", "assay_name": "Assay"},
         color_discrete_sequence=px.colors.qualitative.Set2,
     )
     fig.update_traces(marker_size=8, line_width=1.8)
     # Reference band 25-30
     fig.add_hrect(y0=25, y1=30, fillcolor="rgba(46,204,113,0.08)",
-                  line_width=0, annotation_text="正常范围", annotation_position="top left")
+                  line_width=0, annotation_text="Normal range", annotation_position="top left")
     fig.update_layout(
         height=300,
         margin=dict(l=0, r=0, t=20, b=0),
@@ -276,49 +274,49 @@ def _ct_history_chart(history_df: pd.DataFrame) -> Optional[go.Figure]:
 
 
 def _render_by_sample() -> None:
-    st.subheader("按样本调查")
+    st.subheader("Investigation by Sample")
 
     default_ext: Optional[str] = st.session_state.get("selected_sample_external_id")
     external_id = st.text_input(
-        "样本 External ID",
+        "Sample External ID",
         value=default_ext or "",
-        placeholder="例如：SMP-0001",
+        placeholder="e.g. SMP-0001",
     )
 
     if not external_id:
-        st.info("输入样本 ID 以查看其历史 QC 记录。")
+        st.info("Enter a sample ID to view its QC history.")
         return
 
-    if st.button("加载样本历史"):
+    if st.button("Load sample history"):
         st.session_state["selected_sample_external_id"] = external_id
 
     external_id = st.session_state.get("selected_sample_external_id", external_id)
 
     history_df = get_sample_qc_history(external_id)
     if history_df.empty:
-        st.info(f"未找到样本 `{external_id}` 的 QC 历史记录。")
+        st.info(f"No QC history found for sample `{external_id}`.")
         return
 
     # ── Ct history chart ──────────────────────────────────────────────────────
-    st.subheader(f"样本 `{external_id}` 的 Ct 值历史趋势")
+    st.subheader(f"Ct Value History — {external_id}")
     ct_fig = _ct_history_chart(history_df)
     if ct_fig:
         st.plotly_chart(ct_fig, use_container_width=True)
     else:
-        st.info("该样本无 Ct_value 记录。")
+        st.info("No Ct_value records for this sample.")
 
     # ── flag summary ──────────────────────────────────────────────────────────
     flag_counts = history_df["result_flag"].value_counts()
     f1, f2, f3 = st.columns(3)
-    f1.metric("✅ PASS", int(flag_counts.get("PASS", 0)))
-    f2.metric("🟡 WARN", int(flag_counts.get("WARN", 0)))
-    f3.metric("❌ FAIL", int(flag_counts.get("FAIL", 0)))
+    f1.metric("PASS", int(flag_counts.get("PASS", 0)))
+    f2.metric("WARN", int(flag_counts.get("WARN", 0)))
+    f3.metric("FAIL", int(flag_counts.get("FAIL", 0)))
 
     # ── full history table ────────────────────────────────────────────────────
-    with st.expander("查看完整历史记录"):
+    with st.expander("View full history"):
         st.dataframe(history_df, use_container_width=True, hide_index=True)
 
-    with st.expander("高级：SQL 查询参考"):
+    with st.expander("Advanced: SQL query reference"):
         st.code(
             """
 SELECT
@@ -350,12 +348,12 @@ ORDER BY ar.started_at DESC;
 
 
 def render() -> None:
-    st.header("QC 调查")
+    st.header("QC Investigation")
 
     mode = st.radio(
-        "模式",
+        "Mode",
         options=["By run", "By sample"],
-        format_func=lambda x: "按 Run 调查" if x == "By run" else "按样本追踪",
+        format_func=lambda x: "By Run" if x == "By run" else "By Sample",
         index=0 if st.session_state.get("qc_mode", "By run") == "By run" else 1,
     )
     st.session_state["qc_mode"] = mode
